@@ -1,15 +1,23 @@
 import pygame
 import time
+import Find_enemies
 
 import enemies
 from enemies import*
 import random
+import Maze
 
+# generation of maze with dfs algorithm
+Maze.first_generation()
+Maze.dfs()
+Maze.final_generation()
+maze = Maze.maz
+maze_with_coins = Maze.maz_with_coins
 xs = 525
 ys = 600
+
 pygame.init()
 window = pygame.display.set_mode((xs, ys))
-
 pygame.display.set_caption("Pacman")
 
 # maze
@@ -20,7 +28,7 @@ m = 21
 xm = 10
 ym = 17
 
-maze = [
+mazem = [
     [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0], #1
     [0,1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1,0], #2
     [0,1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1,0], #3
@@ -59,6 +67,7 @@ rmax = 5
 coins = 0
 points = 176
 
+
 def draw_text(words, pos, size, colour, font_name, centered=False):
     font = pygame.font.SysFont(font_name, size)
     text = font.render(words, False, colour)
@@ -90,18 +99,21 @@ def draw_maze():
     # draw maze
     for i in range(n):
         for j in range(m):
-            #pygame.draw.line(window, (107, 107, 107), (xm + j * width, ym + i * width),
-            #                 (xm + j * width, ym + n * width))
-            #pygame.draw.line(window, (107, 107, 107), (xm + j * width, ym + i * width),
-            #                 (xm + m * width, ym + i * width))
+            pygame.draw.line(window, (107, 107, 107), (xm + j * width, ym + i * width),
+                             (xm + j * width, ym + n * width))
+            pygame.draw.line(window, (107, 107, 107), (xm + j * width, ym + i * width),
+                             (xm + m * width, ym + i * width))
+            if maze[i][j] < 0:
+                pygame.draw.rect(window, (192, 192, 192), (xm + j * width, ym + i * width, width, width))
             if maze[i][j] == 1:
                 pygame.draw.rect(window, (50, 100, 232), (xm + j * width, ym + i * width, width, width))
-            elif maze[i][j] == 2:
+            elif maze_with_coins[i][j] != 1:
                 pygame.draw.circle(window, (255, 255, 255), (xm + j * width + 12, ym + i * width + 12), rmin)
 
 
 
-def can_move(j, i):
+
+def can_move(j, i, dirr):
     if maze[(y + i + height // 2) // height - 1][(x + j + width // 2) // width - 1] != 1:
         #print([(y + i + height // 2) // height - 1],[(x + j + width // 2) // width - 1])
         #print("maze =", maze[(y + i + height // 2) // height - 1][(x + j + width // 2) // width - 1])
@@ -111,53 +123,59 @@ def can_move(j, i):
         #print("maze =", maze[(y + i + height // 2) // height - 1][(x + j + width // 2) // width - 1])
         return False
 
-def moving():
-    global direction
+path = 0
+enemy = 2
+def press_keys():
+    global direction, path, enemy
     keys = pygame.key.get_pressed()
-    global y, x
-    if keys[pygame.K_w] and can_move(0, -speed):
-        y -= speed
+    if keys[pygame.K_w]:
         direction = 1
-    if keys[pygame.K_s] and can_move(0, speed):
-        y += speed
+    if keys[pygame.K_s]:
         direction = 2
-    if keys[pygame.K_a] and can_move(-speed, 0):
+    if keys[pygame.K_a]:
+        direction = 3
+    if keys[pygame.K_d]:
+        direction = 4
+    if keys[pygame.K_1]:
+        path = 1
+        find_path(en0)
+    if keys[pygame.K_2]:
+        path = 2
+        find_path(en0)
+    if keys[pygame.K_3]:
+        path = 3
+    if keys[pygame.K_LEFT]:
+        enemy = (enemy + 1) % 4 + 1
+        print(enemy)
+
+
+def find_path(en):
+    global maze
+    ene = maze[(en.coordinate[1]+ height // 2) // height - 1][(en.coordinate[0]+ height // 2) // height - 1]
+    if path == 1:
+        maze = Find_enemies.dfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
+    if path == 2:
+        maze = Find_enemies.dfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
+
+
+def moving():
+    global y, x, direction
+    if direction == 1 and can_move(0, -speed, direction):
+        y -= speed
+    elif direction == 2 and can_move(0, speed, direction):
+        y += speed
+    elif direction == 3 and can_move(-speed, 0, direction):
         if x - speed > 22:
             x -= speed
         else:
             x = 502
-        direction = 3
-    if keys[pygame.K_d] and can_move(speed, 0):
+    elif direction == 4 and can_move(speed, 0, direction):
         if x + speed < 502:
             x += speed
         else:
             x = 22
-        direction = 4
     eating()
-def bmoving():
-    keys = pygame.key.get_pressed()
-    global y, x
-    if keys[pygame.K_w] and can_move(0, -speed):
-        for i in range(3):
-            y -= speed // 3
-            time.sleep(0.01)
-            updating()
-    if keys[pygame.K_s] and can_move(0, speed):
-        for i in range(3):
-            y += speed // 3
-            time.sleep(0.01)
-            updating()
-    if keys[pygame.K_a] and can_move(-speed, 0):
-        for i in range(3):
-            x -= speed//3
-            time.sleep(0.01)
-            updating()
-    if keys[pygame.K_d] and can_move(speed, 0):
-        for i in range(3):
-            x += speed // 3
-            time.sleep(0.01)
-            updating()
-    eating()
+
 
     #coordinate[0] = (x + width // 2) // width
     #coordinate[1] = (y + height // 2) // height
@@ -166,11 +184,11 @@ def bmoving():
 
 en0 = Enemy(0, xm, ym, width)
 en1 = Enemy(1, xm, ym, width)
-
+en2 = Enemy(2, xm, ym, width)
 def draw_enemy():
     pygame.draw.circle(window, en0.pic, (en0.coordinate[0], en0.coordinate[1]), radius - 3)
     pygame.draw.circle(window, en1.pic, (en1.coordinate[0], en1.coordinate[1]), radius - 3)
-
+    pygame.draw.circle(window, en2.pic, (en2.coordinate[0], en2.coordinate[1]), radius - 3)
 
 
 def can_enemy_move(cy, cx, j, i):
@@ -215,8 +233,7 @@ def enemy_moving(en, choice):
         en.coordinate[0] += speed
     return choice
 
-c = -1
-k = -1
+
 def updating():
     global direction, count, f
     window.fill((0, 0, 0))
@@ -232,14 +249,14 @@ def updating():
     pygame.display.update()
     if f:
         time.sleep(2)
-        pygame.mixer.music.unpause()
+        #pygame.mixer.music.unpause()
         f = False
 
 
 def eating():
     global coins, points
-    if maze[(y + height // 2) // height - 1][(x + width // 2) // width - 1] == 2:
-        maze[(y + height // 2) // height - 1][(x + width // 2) // width - 1] = 0
+    if maze_with_coins[(y + height // 2) // height - 1][(x + width // 2) // width - 1] == 2:
+        maze_with_coins[(y + height // 2) // height - 1][(x + width // 2) // width - 1] = 0
         coins += 10
         points -= 1
 
@@ -249,17 +266,19 @@ def is_dying(en):
         return True
 
 f = False
+
 def die():
     global lives, x, y, f
-    if is_dying(en0) or is_dying(en1):
+    if is_dying(en0) or is_dying(en1) or is_dying(en2):
         lives -= 1
         pygame.mixer.music.pause()
-        sound1.play()
+        #sound1.play()
         f = True
         x = xm + 2 * width + 12
         y = ym + 9 * width + 12
         en0.coordinate = enemies.Enemy.set_coordinate(en0, xm, ym, width)
         en1.coordinate = enemies.Enemy.set_coordinate(en1, xm, ym, width)
+        en2.coordinate = enemies.Enemy.set_coordinate(en2, xm, ym, width)
     if lives == 0:
         return True
     else:
@@ -296,12 +315,15 @@ run = True
 start_event = True
 end = False
 
-pygame.mixer.music.load("Kirby.wav")
-pygame.mixer.music.play(-1)
-sound1 = pygame.mixer.Sound("Death.wav")
-
+#pygame.mixer.music.load("Kirby.wav")
+#pygame.mixer.music.play(-1)
+#sound1 = pygame.mixer.Sound("Death.wav")
+l = -1
+c = -1
+k = -1
 while run:
-    clock.tick(5)
+    clock.tick(1)
+
     #pygame.time.delay(50)
     # 0.05 sec
     for event in pygame.event.get():
@@ -314,9 +336,13 @@ while run:
     elif end_game():
         pass
     else:
+        press_keys()
+        if path != 0:
+            find_path(en0)
         moving()
         c = enemy_moving(en0, c)
         k = enemy_moving(en1, k)
+        l = enemy_moving(en2, l)
     updating()
 
 pygame.quit()

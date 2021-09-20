@@ -19,10 +19,10 @@ class Enemy:
 
     def set_pic(self):
         if self.number == 0:
-            return (43, 78, 203)
-        if self.number == 1:
-            return (197, 200, 27)
-        if self.number == 2:
-            return (189, 29, 29)
-        if self.number == 3:
             return (215, 159, 33)
+        if self.number == 1:
+            return (189, 29, 29)
+        if self.number == 2:
+            return (197, 200, 27)
+        if self.number == 3:
+            return (43, 78, 203)
