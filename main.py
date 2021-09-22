@@ -7,11 +7,13 @@ from enemies import*
 import random
 import Maze
 
+just_pressed = False
 # generation of maze with dfs algorithm
 Maze.first_generation()
 Maze.dfs()
 Maze.final_generation()
 maze = Maze.maz
+Maze.maz = maze
 maze_with_coins = Maze.maz_with_coins
 xs = 525
 ys = 600
@@ -28,22 +30,22 @@ m = 21
 xm = 10
 ym = 17
 
-mazem = [
+mazez = [
     [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0], #1
-    [0,1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1,0], #2
-    [0,1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1,0], #3
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #2
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #3
     [0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #4
-    [0,1,2,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,2,1,0], #5
-    [0,1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1,0], #6
-    [0,1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,1,1,0], #7
-    [0,0,0,0,1,2,1,2,2,2,2,2,2,2,1,2,1,0,0,0,0], #8
-    [1,1,1,1,1,2,1,2,1,0,0,0,1,2,1,2,1,1,1,1,1], #9
-    [0,0,0,0,0,2,2,2,1,0,0,0,1,2,2,2,0,0,0,0,0], #10
-    [1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1], #11
-    [0,0,0,0,1,2,1,2,2,2,2,2,2,2,1,2,1,0,0,0,0], #12
-    [0,1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1,1,0], #13
-    [0,1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1,0], #14
-    [0,1,2,1,1,2,1,1,1,2,1,2,1,1,1,0,1,1,2,1,0], #15
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0], #5
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #6
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0], #7
+    [0,1,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #8
+    [0,1,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #9
+    [0,1,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #10
+    [0,1,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #11
+    [0,1,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #12
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0], #13
+    [0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,0], #14
+    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0], #15
     [0,1,2,2,1,2,2,2,2,2,2,2,2,2,2,2,1,2,2,1,0], #16
     [0,1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1,0], #17
     [0,1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1,0], #18
@@ -56,7 +58,7 @@ mazem = [
 x = xm + 2 * width + 12
 y = ym + 9 * width + 12
 radius = 10
-speed = 24
+speed = 4
 coordinate = [2, 9]
 distance = 23
 lives = 3
@@ -107,73 +109,163 @@ def draw_maze():
                 pygame.draw.rect(window, (192, 192, 192), (xm + j * width, ym + i * width, width, width))
             if maze[i][j] == 1:
                 pygame.draw.rect(window, (50, 100, 232), (xm + j * width, ym + i * width, width, width))
-            elif maze_with_coins[i][j] != 1:
+            elif maze_with_coins[i][j] == 2:
                 pygame.draw.circle(window, (255, 255, 255), (xm + j * width + 12, ym + i * width + 12), rmin)
 
 
 
 
-def can_move(j, i, dirr):
-    if maze[(y + i + height // 2) // height - 1][(x + j + width // 2) // width - 1] != 1:
-        #print([(y + i + height // 2) // height - 1],[(x + j + width // 2) // width - 1])
-        #print("maze =", maze[(y + i + height // 2) // height - 1][(x + j + width // 2) // width - 1])
+def can_move(j, i):
+    global direction, just_pressed
+    yy = 0
+    xx = 0
+    ymod = (y - ym) %12
+    xmod = (x-xm)%12
+    if direction == 1 and ymod == 0:
+        yy = 12
+    elif direction == 2 and ymod == 0:
+        yy = -12
+    elif direction == 3 and xmod == 0:
+        xx = 12
+    elif direction == 4 and xmod == 0:
+        xx = -12
+
+    if just_pressed:
+        if ymod == xmod and maze[(y - ym - yy) // height + 1][(x - xm - xx) // height] != 1 \
+                and maze[(y - ym - yy) // height - 1][(x - xm - xx) // height] != 1 \
+                and maze[(y - ym - yy) // height][(x - xm - xx) // height + 1] != 1:
+            direction = -1
+            return False
+        elif ymod == xmod and maze[(y - ym) // height + 1][(x - xm) // height] != 1 \
+                and maze[(y - ym) // height - 1][(x - xm) // height] != 1 \
+                and maze[(y - ym) // height][(x - xm) // height - 1] != 1:
+            direction = -1
+            return False
+        elif ymod == xmod and maze[(y - ym) // height][(x - xm) // height - 1] != 1\
+                and maze[(y - ym) // height][(x - xm) // height + 1] != 1\
+                and maze[(y - ym) // height - 1][(x - xm) // height] != 1:
+            direction = -1
+            return False
+        elif ymod == xmod and maze[(y - ym) // height][(x - xm) // height - 1] != 1 \
+                and maze[(y - ym) // height][(x - xm) // height + 1] != 1\
+                and maze[(y - ym) // height + 1][(x - xm) // height] != 1:
+            direction = -1
+            return False
+    if maze[(y + i - ym - yy) // height][(x + j - xm - xx) // height] != 1:
+        # print("x = ", x)
+        # print("y = ", y)
+        # print([(y + i + height // 2 - yy) // height - 1],[(x + j + width // 2 - xx) // width - 1])
+        # print("maze =", maze[(y + i + height // 2 - yy) // height - 1][(x + j + width // 2 - xx) // width - 1])
         return True
     else:
-        #print([(y + i + height // 2) // height - 1], [(x + j + width // 2) // width - 1])
-        #print("maze =", maze[(y + i + height // 2) // height - 1][(x + j + width // 2) // width - 1])
+        #print([(y + i - ym - yy) // height], [(x + j - xm - xx) // height])
+        #print("maze =", maze[(y + i - ym - yy) // height][(x + j - xm - xx) // height])
         return False
 
 path = 0
 enemy = 2
 def press_keys():
-    global direction, path, enemy
+    global direction, path, enemy, just_pressed
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         direction = 1
+        just_pressed = False
     if keys[pygame.K_s]:
         direction = 2
+        just_pressed = False
     if keys[pygame.K_a]:
         direction = 3
+        just_pressed = False
     if keys[pygame.K_d]:
         direction = 4
+        just_pressed = False
     if keys[pygame.K_1]:
         path = 1
-        find_path(en0)
+        just_pressed = True
+        if enemy == 1:
+            find_path(en0)
+        elif enemy == 2:
+            find_path(en1)
+        else:
+            find_path(en2)
     if keys[pygame.K_2]:
+        just_pressed = True
         path = 2
-        find_path(en0)
+        if enemy == 1:
+            find_path(en0)
+        elif enemy == 2:
+            find_path(en1)
+        else:
+            find_path(en2)
     if keys[pygame.K_3]:
+        just_pressed = True
         path = 3
+        if enemy == 1:
+            find_path(en0)
+        elif enemy == 2:
+            find_path(en1)
+        else:
+            find_path(en2)
+    if keys[pygame.K_4]:
+        path = 0
     if keys[pygame.K_LEFT]:
-        enemy = (enemy + 1) % 4 + 1
+        enemy = (enemy + 1) % 3 + 1
         print(enemy)
 
 
 def find_path(en):
-    global maze
-    ene = maze[(en.coordinate[1]+ height // 2) // height - 1][(en.coordinate[0]+ height // 2) // height - 1]
+    global maze, just_pressed
+    ene = maze[(en.coordinate[1] + height // 2) // height - 1][(en.coordinate[0]+ height // 2) // height - 1]
+    start_time = time.time()
     if path == 1:
-        maze = Find_enemies.dfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
+        if just_pressed:
+            start_time = time.time()
+        plist = Find_enemies.dfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
+        if just_pressed:
+            print("--- %s seconds --- for dfs" % (time.time() - start_time))
+        change(plist)
     if path == 2:
-        maze = Find_enemies.dfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
+        if just_pressed:
+            start_time = time.time()
+        plist = Find_enemies.bfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
+        if just_pressed:
+            print("--- %s seconds --- for bfs" % (time.time() - start_time))
+        change(plist)
+    if path == 3:
+        if just_pressed:
+            start_time = time.time()
+        plist = Find_enemies.ucs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
+        if just_pressed:
+            print("--- %s seconds --- for ucs" % (time.time() - start_time))
+        change(plist)
+
+
+def change(el):
+    global maze
+    for i in range(n):
+        for j in range(n):
+            if maze[i][j] in el:
+                maze[i][j] = -maze[i][j]
 
 
 def moving():
-    global y, x, direction
-    if direction == 1 and can_move(0, -speed, direction):
+    global y, x, direction, just_pressed
+    if direction == 1 and can_move(0, -speed):
         y -= speed
-    elif direction == 2 and can_move(0, speed, direction):
+
+    elif direction == 2 and can_move(0, speed):
         y += speed
-    elif direction == 3 and can_move(-speed, 0, direction):
-        if x - speed > 22:
+    elif direction == 3 and can_move(-speed, 0):
+        if x - speed >= 22:
             x -= speed
         else:
             x = 502
-    elif direction == 4 and can_move(speed, 0, direction):
-        if x + speed < 502:
+    elif direction == 4 and can_move(speed, 0):
+        if x + speed <= 502:
             x += speed
         else:
             x = 22
+    just_pressed = True
     eating()
 
 
@@ -192,6 +284,7 @@ def draw_enemy():
 
 
 def can_enemy_move(cy, cx, j, i):
+
     if maze[(cy + i + height // 2) // height - 1][(cx + j + width // 2) // width - 1] != 1:
         #print([(y + i + height // 2) // height - 1],[(x + j + width // 2) // width - 1])
         #print("maze =", maze[(cy + i + height // 2) // height - 1][(cx + j + width // 2) // width - 1])
@@ -205,24 +298,25 @@ def can_enemy_move(cy, cx, j, i):
 def enemy_moving(en, choice):
     direct = list()
     flag = 0
-    if can_enemy_move(en.coordinate[1], en.coordinate[0], 0, -speed):  # up
+    if can_enemy_move(en.coordinate[1], en.coordinate[0], 0, -speed - 15):  # up
         direct.append(0)
         if 0 == choice:
             flag = 1
-    if can_enemy_move(en.coordinate[1], en.coordinate[0], 0, speed):   # down
+    if can_enemy_move(en.coordinate[1], en.coordinate[0], 0, speed + 4):   # down
         direct.append(1)
         if 1 == choice:
             flag = 1
-    if can_enemy_move(en.coordinate[1], en.coordinate[0], -speed, 0):  # left
+    if can_enemy_move(en.coordinate[1], en.coordinate[0], -speed - 10, 0):  # left
         direct.append(2)
         if 2 == choice:
             flag = 1
-    if can_enemy_move(en.coordinate[1], en.coordinate[0], speed, 0):   # right
+    if can_enemy_move(en.coordinate[1], en.coordinate[0], speed + 11, 0):   # right
         direct.append(3)
         if 3 == choice:
             flag = 1
     if flag != 1:
         choice = random.choice(direct)
+
     if choice == 0:
         en.coordinate[1] -= speed
     elif choice == 1:
@@ -322,7 +416,7 @@ l = -1
 c = -1
 k = -1
 while run:
-    clock.tick(1)
+    clock.tick(10)
 
     #pygame.time.delay(50)
     # 0.05 sec
@@ -338,9 +432,14 @@ while run:
     else:
         press_keys()
         if path != 0:
-            find_path(en0)
+            if enemy == 1:
+                find_path(en0)
+            elif enemy == 2:
+                find_path(en1)
+            else:
+                find_path(en2)
         moving()
-        c = enemy_moving(en0, c)
+        #c = enemy_moving(en0, c)
         k = enemy_moving(en1, k)
         l = enemy_moving(en2, l)
     updating()

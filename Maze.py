@@ -106,7 +106,10 @@ def break_walls():
         j = random.randint(1, 18)
         if j%2 != 0:
             j += 1
-        if maz[i][j] == 1:
+        if maz[i][j] == 1 and ((maz[i - 1][j] == 1 and maz[i + 1][j] == 1
+                                and maz[i][j + 1] != 1 and maz[i][j - 1] != 1)) \
+                or ((maz[i - 1][j] != 1 and maz[i + 1][j] != 1
+                     and maz[i][j + 1] == 1 and maz[i][j - 1] == 1)):
             maz[i][j] = c
             c += 1
 
