@@ -1,6 +1,7 @@
 import pygame
 import time
 import Find_enemies
+import Find_point
 
 import enemies
 from enemies import*
@@ -69,6 +70,10 @@ rmax = 5
 coins = 0
 points = 176
 
+# moving without player
+goal = 0
+next_point = 0
+pacman_path = []
 
 def draw_text(words, pos, size, colour, font_name, centered=False):
     font = pygame.font.SysFont(font_name, size)
@@ -111,7 +116,6 @@ def draw_maze():
                 pygame.draw.rect(window, (50, 100, 232), (xm + j * width, ym + i * width, width, width))
             elif maze_with_coins[i][j] == 2:
                 pygame.draw.circle(window, (255, 255, 255), (xm + j * width + 12, ym + i * width + 12), rmin)
-
 
 
 
@@ -220,7 +224,7 @@ def find_path(en):
     if path == 1:
         if just_pressed:
             start_time = time.time()
-        plist = Find_enemies.dfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
+        plist = Find_enemies.astar_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1], ene)
         if just_pressed:
             print("--- %s seconds --- for dfs" % (time.time() - start_time))
         change(plist)
@@ -248,11 +252,142 @@ def change(el):
                 maze[i][j] = -maze[i][j]
 
 
+def find_rand():  # find random coin in maze
+    unvisited_list = []
+    for i in range(n):
+        for j in range(n):
+            if maze_with_coins[i][j] > 1:
+                unvisited_list.append(maze[i][j])
+    return random.choice(unvisited_list)
+
+def find_index(current):
+    for i in range(n):
+        for j in range(n):
+            if abs(current) == abs(maze[i][j]):
+                #print("Current indexes: ", i, " ", j)
+                return i, j
+
+
+def pac_coor(i):
+    return (i + height // 2) // height - 1
+
+
+def enemies_moving_by_pac(en, choice):
+    global y, x
+    die()
+    if abs(pac_coor(en.coordinate[0]) - pac_coor(x)) + abs(pac_coor(en.coordinate[1]) - pac_coor(y)) <= 3:
+        ene = maze[(en.coordinate[1] + height // 2) // height - 1][(en.coordinate[0] + height // 2) // height - 1]
+        enemy_path = Find_point.bfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1],
+                                           ene)
+        enemy_path.pop(0)
+        en.stalker = enemy_path.pop(0)
+
+        i, j = find_index(en.stalker)
+        if pac_coor(en.coordinate[1]) - i == 1 and pac_coor(en.coordinate[0]) - j == 0:
+            choice = 0
+        elif pac_coor(en.coordinate[1]) - i == -1 and pac_coor(en.coordinate[0]) - j == 0:
+            choice = 1
+        elif pac_coor(en.coordinate[1]) - i == 0 and pac_coor(en.coordinate[0]) - j == 1:
+            choice = 2
+        elif pac_coor(en.coordinate[1]) - i == 0 and pac_coor(en.coordinate[0]) - j == -1:
+            choice = 3
+    else:
+        direct = list()
+        flag = 0
+        if can_enemy_move(en.coordinate[1], en.coordinate[0], 0, -speed - 15):  # up
+            direct.append(0)
+            if 0 == choice:
+                flag = 1
+        if can_enemy_move(en.coordinate[1], en.coordinate[0], 0, speed + 4):  # down
+            direct.append(1)
+            if 1 == choice:
+                flag = 1
+        if can_enemy_move(en.coordinate[1], en.coordinate[0], -speed - 10, 0):  # left
+            direct.append(2)
+            if 2 == choice:
+                flag = 1
+        if can_enemy_move(en.coordinate[1], en.coordinate[0], speed + 11, 0):  # right
+            direct.append(3)
+            if 3 == choice:
+                flag = 1
+        if flag != 1:
+            choice = random.choice(direct)
+
+    if choice == 0:
+        en.coordinate[1] -= speed  # up
+    elif choice == 1:
+        en.coordinate[1] += speed  # down
+    elif choice == 2:
+        en.coordinate[0] -= speed  # left
+    elif choice == 3:
+        en.coordinate[0] += speed  # right
+    die()
+    return choice
+
+
 def moving():
+    global y, x, direction, just_pressed, goal, pacman_path, next_point
+    die()
+    if goal == 0:
+        goal = find_rand()
+        pacman_path = Find_enemies.astar_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1],
+                                        goal)
+        pacman_path.reverse()
+        #change(pacman_path)
+        next_point = pacman_path.pop(0)
+    xx = 0
+    yy = 0
+    if direction == 1:
+        yy = 3
+    elif direction == 2:
+        yy = -15
+    elif direction == 3:
+        xx = 10
+    elif direction == 4:
+        xx = -10
+    if goal != abs(maze[(y + yy + height // 2) // height - 1][(x + xx + height // 2) // height - 1]):
+        if next_point == abs(maze[(y + yy + height // 2) // height - 1][(x + xx + height // 2) // height - 1]):
+            maze[(y + yy + height // 2) // height - 1][(x + xx + height // 2) // height - 1] =\
+                abs(maze[(y + yy + height // 2) // height - 1][(x + xx + height // 2) // height - 1])
+
+            next_point = pacman_path.pop(0)
+            i, j = find_index(next_point)
+            if ((y + height // 2) // height - 1) - i == 1 and ((x + height // 2) // height - 1) - j == 0:
+                direction = 1
+            elif ((y + height // 2) // height - 1) - i == -1 and ((x + height // 2) // height - 1) - j == 0:
+                direction = 2
+            elif ((y + height // 2) // height - 1) - i == 0 and ((x + height // 2) // height - 1) - j == 1:
+                direction = 3
+            elif ((y + height // 2) // height - 1) - i == 0 and ((x + height // 2) // height - 1) - j == -1:
+                direction = 4
+    else:
+        goal = 0
+        direction = -1
+
+    if direction == 1:
+        y -= speed
+    elif direction == 2:
+        y += speed
+    elif direction == 3:
+        if x - speed >= 22:
+            x -= speed
+        else:
+            x = 502
+    elif direction == 4:
+        if x + speed <= 502:
+            x += speed
+        else:
+            x = 22
+    just_pressed = True
+    eating()
+    die()
+
+
+
+def moving_old():
     global y, x, direction, just_pressed
     if direction == 1 and can_move(0, -speed):
         y -= speed
-
     elif direction == 2 and can_move(0, speed):
         y += speed
     elif direction == 3 and can_move(-speed, 0):
@@ -267,11 +402,6 @@ def moving():
             x = 22
     just_pressed = True
     eating()
-
-
-    #coordinate[0] = (x + width // 2) // width
-    #coordinate[1] = (y + height // 2) // height
-    #print(coordinate)
 
 
 en0 = Enemy(0, xm, ym, width)
@@ -415,8 +545,13 @@ end = False
 l = -1
 c = -1
 k = -1
+
+
+
+
+
 while run:
-    clock.tick(10)
+    clock.tick(20)
 
     #pygame.time.delay(50)
     # 0.05 sec
@@ -438,10 +573,12 @@ while run:
                 find_path(en1)
             else:
                 find_path(en2)
+
+        c = enemies_moving_by_pac(en0, c)
+        k = enemies_moving_by_pac(en1, k)
+        l = enemies_moving_by_pac(en2, l)
         moving()
-        #c = enemy_moving(en0, c)
-        k = enemy_moving(en1, k)
-        l = enemy_moving(en2, l)
+        change(pacman_path)
     updating()
 
 pygame.quit()

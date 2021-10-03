@@ -6,6 +6,7 @@ class Enemy:
         self.number = number
         self.coordinate = self.set_coordinate(xm, ym, width)
         self.pic = self.set_pic()
+        self.stalker = 0
 
     def set_coordinate(self, xm, ym, width):
         if self.number == 0:
@@ -16,6 +17,8 @@ class Enemy:
             return [xm + 11 * width + 12, ym + 9 * width + 12]
         if self.number == 3:
             return [xm + 10 * width + 12, ym + 7 * width + 12]
+
+
 
     def set_pic(self):
         if self.number == 0:
