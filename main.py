@@ -7,6 +7,8 @@ import enemies
 from enemies import*
 import random
 import Maze
+import MiniMax
+import csv
 
 just_pressed = False
 # generation of maze with dfs algorithm
@@ -68,12 +70,15 @@ lives = 3
 rmin = 3
 rmax = 5
 coins = 0
-points = 176
+points = Maze.num_of_coins
 
 # moving without player
 goal = 0
 next_point = 0
 pacman_path = []
+
+current_move = -1
+
 
 def draw_text(words, pos, size, colour, font_name, centered=False):
     font = pygame.font.SysFont(font_name, size)
@@ -110,13 +115,12 @@ def draw_maze():
                              (xm + j * width, ym + n * width))
             pygame.draw.line(window, (107, 107, 107), (xm + j * width, ym + i * width),
                              (xm + m * width, ym + i * width))
-            if maze[i][j] < 0:
-                pygame.draw.rect(window, (192, 192, 192), (xm + j * width, ym + i * width, width, width))
+            #if maze[i][j] < 0:
+                #pygame.draw.rect(window, (192, 192, 192), (xm + j * width, ym + i * width, width, width))
             if maze[i][j] == 1:
                 pygame.draw.rect(window, (50, 100, 232), (xm + j * width, ym + i * width, width, width))
             elif maze_with_coins[i][j] == 2:
                 pygame.draw.circle(window, (255, 255, 255), (xm + j * width + 12, ym + i * width + 12), rmin)
-
 
 
 def can_move(j, i):
@@ -260,6 +264,7 @@ def find_rand():  # find random coin in maze
                 unvisited_list.append(maze[i][j])
     return random.choice(unvisited_list)
 
+
 def find_index(current):
     for i in range(n):
         for j in range(n):
@@ -274,23 +279,26 @@ def pac_coor(i):
 
 def enemies_moving_by_pac(en, choice):
     global y, x
-    die()
-    if abs(pac_coor(en.coordinate[0]) - pac_coor(x)) + abs(pac_coor(en.coordinate[1]) - pac_coor(y)) <= 3:
-        ene = maze[(en.coordinate[1] + height // 2) // height - 1][(en.coordinate[0] + height // 2) // height - 1]
-        enemy_path = Find_point.bfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1],
-                                           ene)
-        enemy_path.pop(0)
-        en.stalker = enemy_path.pop(0)
+    if current_move == 0:
+        if (abs(pac_coor(en.coordinate[0]) - pac_coor(x)) + abs(pac_coor(en.coordinate[1]) - pac_coor(y))
+                          <= 3 and (en.coordinate[0] == x or en.coordinate[1] == y) \
+                and current_move == 0):
+            ene = maze[(en.coordinate[1] + height // 2) // height - 1][(en.coordinate[0] + height // 2) // height - 1]
+            enemy_path = Find_point.bfs_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1],
+                                               ene)
+            enemy_path.pop(0)
+            if len(enemy_path)!= 0:
+                en.stalker = enemy_path.pop(0)
 
-        i, j = find_index(en.stalker)
-        if pac_coor(en.coordinate[1]) - i == 1 and pac_coor(en.coordinate[0]) - j == 0:
-            choice = 0
-        elif pac_coor(en.coordinate[1]) - i == -1 and pac_coor(en.coordinate[0]) - j == 0:
-            choice = 1
-        elif pac_coor(en.coordinate[1]) - i == 0 and pac_coor(en.coordinate[0]) - j == 1:
-            choice = 2
-        elif pac_coor(en.coordinate[1]) - i == 0 and pac_coor(en.coordinate[0]) - j == -1:
-            choice = 3
+            i, j = find_index(en.stalker)
+            if pac_coor(en.coordinate[1]) - i == 1 and pac_coor(en.coordinate[0]) - j == 0:
+                choice = 0
+            elif pac_coor(en.coordinate[1]) - i == -1 and pac_coor(en.coordinate[0]) - j == 0:
+                choice = 1
+            elif pac_coor(en.coordinate[1]) - i == 0 and pac_coor(en.coordinate[0]) - j == 1:
+                choice = 2
+            elif pac_coor(en.coordinate[1]) - i == 0 and pac_coor(en.coordinate[0]) - j == -1:
+                choice = 3
     else:
         direct = list()
         flag = 0
@@ -321,8 +329,50 @@ def enemies_moving_by_pac(en, choice):
         en.coordinate[0] -= speed  # left
     elif choice == 3:
         en.coordinate[0] += speed  # right
-    die()
     return choice
+
+
+def moving_minimax():
+    global y, x, direction, just_pressed, goal, pacman_path, next_point
+    if len(pacman_path) != 0:
+        change(pacman_path)
+    pacman_path.clear()
+    coor_list = []
+    for i in range(4):
+        coor_list.append([pac_coor(En[i].coordinate[1]), pac_coor(En[i].coordinate[0])])
+    if current_move == 0:
+        direction = MiniMax.call_minimax(maze, [pac_coor(y), pac_coor(x)], coor_list, maze_with_coins)
+        if direction == -1:
+            goal = 0
+            moving()
+            return
+    xx = 0
+    yy = 0
+    if direction == 1:
+        yy = 3
+    elif direction == 2:
+        yy = -15
+    elif direction == 3:
+        xx = 10
+    elif direction == 4:
+        xx = -10
+    if direction == 1:
+        y -= speed
+    elif direction == 2:
+        y += speed
+    elif direction == 3:
+        if x - speed >= 22:
+            x -= speed
+        else:
+            x = 502
+    elif direction == 4:
+        if x + speed <= 502:
+            x += speed
+        else:
+            x = 22
+    just_pressed = True
+    eating()
+    die()
 
 
 def moving():
@@ -333,7 +383,7 @@ def moving():
         pacman_path = Find_enemies.astar_find(maze, maze[(y + height // 2) // height - 1][(x + height // 2) // height - 1],
                                         goal)
         pacman_path.reverse()
-        #change(pacman_path)
+        change(pacman_path)
         next_point = pacman_path.pop(0)
     xx = 0
     yy = 0
@@ -383,7 +433,6 @@ def moving():
     die()
 
 
-
 def moving_old():
     global y, x, direction, just_pressed
     if direction == 1 and can_move(0, -speed):
@@ -407,10 +456,13 @@ def moving_old():
 en0 = Enemy(0, xm, ym, width)
 en1 = Enemy(1, xm, ym, width)
 en2 = Enemy(2, xm, ym, width)
+en3 = Enemy(3, xm, ym, width)
+En = [en0, en1, en2, en3]
+
+
 def draw_enemy():
-    pygame.draw.circle(window, en0.pic, (en0.coordinate[0], en0.coordinate[1]), radius - 3)
-    pygame.draw.circle(window, en1.pic, (en1.coordinate[0], en1.coordinate[1]), radius - 3)
-    pygame.draw.circle(window, en2.pic, (en2.coordinate[0], en2.coordinate[1]), radius - 3)
+    for i in range(4):
+        pygame.draw.circle(window, En[i].pic, (En[i].coordinate[0], En[i].coordinate[1]), radius - 3)
 
 
 def can_enemy_move(cy, cx, j, i):
@@ -486,23 +538,25 @@ def eating():
 
 
 def is_dying(en):
-    if en.coordinate[0] == x and en.coordinate[1] == y:
+    if (en.coordinate[0] - 4 <= x <= en.coordinate[0] + 4) \
+            and (en.coordinate[1] - 4 <= y <= en.coordinate[1] + 4):
         return True
 
 f = False
 
 def die():
-    global lives, x, y, f
-    if is_dying(en0) or is_dying(en1) or is_dying(en2):
+    global lives, x, y, f, goal, current_move
+    if is_dying(En[0]) or is_dying(En[1]) or is_dying(En[2]) or is_dying(En[3]):
         lives -= 1
+        goal = 0
+        current_move = -1
         pygame.mixer.music.pause()
         #sound1.play()
         f = True
         x = xm + 2 * width + 12
         y = ym + 9 * width + 12
-        en0.coordinate = enemies.Enemy.set_coordinate(en0, xm, ym, width)
-        en1.coordinate = enemies.Enemy.set_coordinate(en1, xm, ym, width)
-        en2.coordinate = enemies.Enemy.set_coordinate(en2, xm, ym, width)
+        for i in range(4):
+            En[i].coordinate = enemies.Enemy.set_coordinate(En[i], xm, ym, width)
     if lives == 0:
         return True
     else:
@@ -511,13 +565,24 @@ def die():
 
 def end_game():
     if points == 0:
+        if write_flag:
+            write_statistic("Win")
         winner()
         return True
     if die():
+        if write_flag:
+            write_statistic("Lose")
         game_over()
         return True
     return False
 
+write_flag = True
+def write_statistic(winner):
+    global write_flag
+    data = winner + " " + str(coins)
+    with open("data.txt", "a") as file:
+        file.write(data + '\n')
+    write_flag = False
 #walkU = [pygame.image.load('stay.png'), pygame.image.load('u1.png'), pygame.image.load('u2.png'),
          #pygame.image.load('u1.png'), pygame.image.load('stay.png')]
 #walkD = [pygame.image.load('stay.png'), pygame.image.load('d1.png'), pygame.image.load('d2.png'),
@@ -542,17 +607,11 @@ end = False
 #pygame.mixer.music.load("Kirby.wav")
 #pygame.mixer.music.play(-1)
 #sound1 = pygame.mixer.Sound("Death.wav")
-l = -1
-c = -1
-k = -1
 
-
-
-
-
+for_enemies = [-1, -1, -1, -1]
 while run:
-    clock.tick(20)
 
+    clock.tick(40)
     #pygame.time.delay(50)
     # 0.05 sec
     for event in pygame.event.get():
@@ -563,8 +622,12 @@ while run:
         if keys[pygame.K_SPACE]:
             start_event = False
     elif end_game():
+
         pass
     else:
+        current_move += 1
+        if current_move > 5:
+            current_move = 0
         press_keys()
         if path != 0:
             if enemy == 1:
@@ -573,11 +636,10 @@ while run:
                 find_path(en1)
             else:
                 find_path(en2)
-
-        c = enemies_moving_by_pac(en0, c)
-        k = enemies_moving_by_pac(en1, k)
-        l = enemies_moving_by_pac(en2, l)
-        moving()
+        for i in range(4):
+            for_enemies[i] = enemies_moving_by_pac(En[i], for_enemies[i])
+        moving_minimax()
+        #moving()
         change(pacman_path)
     updating()
 

@@ -75,19 +75,22 @@ def first_generation():
             else:
                 maz[i][j] = 1
 
-
+num_of_coins = 0
 def final_generation():
-    global c
+    global c, num_of_coins
     c = 2
     break_walls()
     maz[9][2] = c
     maz[9][9] = c
     maz[9][10] = c
     maz[9][11] = c
+    maz[11][10] = c
+    maz[7][10] = c
     for i in range(n):
         for j in range(n):
             if maz[i][j] == 1:
                 maz_with_coins[i][j] = 1
+                num_of_coins += 1
             else:
                 maz[i][j] = c
                 c += 1

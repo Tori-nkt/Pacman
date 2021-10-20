@@ -1,0 +1,12 @@
+Win  score  depth
+Lose 960       3
+Lose 1760      3
+Lose 730       6
+Lose 1770      6
+Lose 910       6(with a* for 2 ai)
+Lose 210       6(with a* for 2 ai)
+Lose 1090      6(with a* for 2 ai)
+
+Lose 550       3(with a* for 2 ai)
+Lose 270       3(with a* for 2 ai)
+Lose 1850      3
